@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 function update_submodules {
     git submodule init
     check_exit_code
