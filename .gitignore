@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #####
 # Here is a list of files to be ignored by git
 # Project: uClient
@@ -20,3 +21,31 @@ bin/
 gen/
 # Local configuration file (sdk path, etc)
 local.properties
+=======
+#Libraries files
+/LibProjects/ViewPageIndicator/gen*
+/LibProjects/ViewPageIndicator/bin*
+/LibProjects/GraphView/gen*
+/LibProjects/GraphView/bin*
+
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Eclipse project files
+.classpath
+.project
+>>>>>>> 7470b979ef4d510cd36451826af0acb16edc5841

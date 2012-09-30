@@ -124,13 +124,13 @@ public class HomeActivity extends Activity {
 
         tv.setText("Waiting to scan for a QR code...");
         if (contents.equals("")) {
-            scan();
+//            scan();
         }
 
 
 //
 //        buildData("http://192.168.1.108:8081/uberdust/rest/testbed/1/node/urn:wisebed:ctitestbed:virtual:room:0.I.3/rdf/rdf+xml/");
-//        buildData("http://uberdust.cti.gr/rest/testbed/1/node/urn:wisebed:ctitestbed:virtual:room:0.I.2/rdf/rdf+xml/");
+        buildData("http://uberdust.cti.gr/rest/testbed/1/node/urn:wisebed:ctitestbed:virtual:room:0.I.2/rdf/rdf+xml/");
     }
 
     private void scan() {
