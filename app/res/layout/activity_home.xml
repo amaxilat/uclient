@@ -20,33 +20,37 @@
               android:width="200dp"
               android:height="30dp"
               android:text=""
-            ></TextView>
+            />
 
     <TextView android:id="@+id/urlscannedtextview"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:width="200dp"
               android:height="50dp"
-              android:text="Test"
-            ></TextView>
+              android:text="Text"
+            />
 
     <Button android:id="@+id/loadbutton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:width="200dp"
             android:text="View Information"
-            ></Button>
+            />
     <Button android:id="@+id/rescanbutton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:width="200dp"
             android:text="Re-Scan Code"
-            ></Button>
+            />
     <Button android:id="@+id/loadHistory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:width="200dp"
             android:text="Load Past Scan"
-            ></Button>
-
+            />
+    <ImageView
+            android:id="@+id/logoSPITFIRE"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription=""/>
 </LinearLayout>

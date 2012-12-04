@@ -12,6 +12,7 @@ public class Capability implements Serializable {
     public Capability(String capability, int type) {
         this.name = capability;
         this.type = type;
+        this.url = "/node/" + capability;
     }
 
     public String getUrl() {

@@ -27,6 +27,7 @@
           <path>/res-overlay</path>
         </resOverlayFolders>
         <includeSystemProguardFile>true</includeSystemProguardFile>
+        <includeAssetsFromLibraries>true</includeAssetsFromLibraries>
         <additionalNativeLibs />
       </configuration>
     </facet>
@@ -50,6 +51,11 @@
     </orderEntry>
     <orderEntry type="module" module-name="library" />
     <orderEntry type="module" module-name="library" />
+    <orderEntry type="library" name="UberdustInterface-1.0" level="project" />
+    <orderEntry type="library" name="ExampleClient" level="project" />
+    <orderEntry type="library" name="log4j-1.2.17" level="project" />
+    <orderEntry type="library" name="cf-client-0.12.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="californium-0.8.1" level="project" />
   </component>
 </module>
 
