@@ -48,6 +48,11 @@
             android:width="200dp"
             android:text="Load Past Scan"
             />
+    <Button android:id="@+id/writeTag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:width="200dp"
+            android:text="Write2Tag"/>
     <ImageView
             android:id="@+id/logoSPITFIRE"
             android:layout_width="wrap_content"

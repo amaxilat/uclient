@@ -2,10 +2,19 @@ package eu.uberdust.uClient;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
+import android.nfc.tech.Ndef;
+import android.nfc.tech.NdefFormatable;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -21,10 +30,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -35,12 +46,17 @@ public class HomeActivity extends Activity {
     private String contents;
     private static final String VIRTUAL = "virtual";
     private SharedPreferences settings;
+    private NfcAdapter mAdapter;
+    private static boolean writeMode = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Log.d("DEBUG", "onCreateHomeActivity");
+
+        // grab our NFC Adapter
+        mAdapter = NfcAdapter.getDefaultAdapter(this);
 
 
         settings = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -68,6 +84,7 @@ public class HomeActivity extends Activity {
         Button startbutton = (Button) findViewById(R.id.loadbutton);
         Button rescanbutton = (Button) findViewById(R.id.rescanbutton);
         Button loadHistoryButton = (Button) findViewById(R.id.loadHistory);
+        Button writeTagButton = (Button) findViewById(R.id.writeTag);
         rescanbutton.setEnabled(true);
         startbutton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -89,6 +106,12 @@ public class HomeActivity extends Activity {
             }
         });
         loadHistoryButton.setEnabled(true);
+        writeTagButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                enableWriteMode();
+            }
+        });
         loadHistoryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -137,13 +160,64 @@ public class HomeActivity extends Activity {
             }
         });
 
-        tv.setText("Waiting to scan for a QR code...");
-        if (contents.equals("")) {
-            scan();
+        if (writeMode == false) {
+            Intent intent = getIntent();
+            if (intent.getType() != null && intent.getType().equals("application/eu.uberdust")) {
+                Parcelable[] rawMsgs = getIntent().getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+                NdefMessage msg = (NdefMessage) rawMsgs[0];
+                NdefRecord cardRecord = msg.getRecords()[0];
+                final String result = new String(cardRecord.getPayload());
+
+                contents = result;
+                if (contents != null) {
+                    tv = (TextView) findViewById(R.id.urlscannedtextview);
+
+                    if (contents.contains(VIRTUAL)) {
+                        tv.setText("You are in  a " + extractType() + " called " + extractID() + ".");
+                    } else {
+                        tv.setText("You change an object with ID " + extractID());
+                    }
+                } else {
+                    Log.d("SCAN", "FAIL");
+                }
+
+//            buildData(new String(cardRecord.getPayload()));
+            } else {
+                tv.setText("Waiting to scan for a QR code...");
+                if (contents.equals("")) {
+                    scan();
+                }
+            }
         }
 
 //        buildData("http://192.168.1.5:8080/uberdust/rest/testbed/2/node/urn:pspace:0x2eb/rdf/rdf+xml/");
 //        buildData("http://uberdust.cti.gr/rest/testbed/1/node/urn:wisebed:ctitestbed:virtual:room:0.I.9/rdf/rdf+xml/");
+    }
+
+    /**
+     * Force this Activity to get NFC events first
+     */
+    private void enableWriteMode() {
+        writeMode = true;
+        displayMessage("Tap tag to write...");
+        // set up a PendingIntent to open the app when a tag is scanned
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+        IntentFilter tagDetected = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
+        IntentFilter[] filters = new IntentFilter[]{tagDetected};
+        mAdapter.enableForegroundDispatch(this, pendingIntent, filters, null);
+
+    }
+
+
+    /**
+     * Called when our blank tag is scanned executing the PendingIntent
+     */
+    @Override
+    public void onNewIntent(Intent intent) {
+        // write to newly scanned tag
+        Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        writeTag(tag);
     }
 
     private void scan() {
@@ -326,5 +400,78 @@ public class HomeActivity extends Activity {
         }
     }
 
+
+    /**
+     * Format a tag and write our NDEF message
+     *
+     * @param tag
+     */
+    private boolean writeTag(Tag tag) {
+
+        // record to launch Play Store if app is not installed
+//        NdefRecord appRecord = NdefRecord.createMime("application/eu.uberdust", "application/eu.uberdust".getBytes());
+
+        // record that contains our custom "retro console" game data, using custom MIME_TYPE
+        byte[] payload = contents.getBytes();
+        byte[] mimeBytes = "application/eu.uberdust".getBytes(Charset.defaultCharset());
+        NdefRecord cardRecord = new NdefRecord(NdefRecord.TNF_MIME_MEDIA, mimeBytes,
+                new byte[0], payload);
+        NdefMessage message = new NdefMessage(new NdefRecord[]{cardRecord});
+
+        try {
+            // see if tag is already NDEF formatted
+            Ndef ndef = Ndef.get(tag);
+            if (ndef != null) {
+                ndef.connect();
+
+                if (!ndef.isWritable()) {
+                    displayMessage("Read-only tag.");
+                    return false;
+                }
+
+                // work out how much space we need for the data
+                int size = message.toByteArray().length;
+                if (ndef.getMaxSize() < size) {
+                    displayMessage("Tag doesn't have enough free space.");
+                    writeMode = false;
+                    return false;
+                }
+
+                ndef.writeNdefMessage(message);
+                displayMessage("Tag written successfully.");
+                return true;
+            } else {
+                // attempt to format tag
+                NdefFormatable format = NdefFormatable.get(tag);
+                if (format != null) {
+                    try {
+                        format.connect();
+                        format.format(message);
+                        displayMessage("Tag written successfully!\nClose this app and scan tag.");
+                        writeMode = false;
+                        return true;
+                    } catch (IOException e) {
+                        displayMessage("Unable to format tag to NDEF.");
+                        writeMode = false;
+                        return false;
+                    }
+                } else {
+                    displayMessage("Tag doesn't appear to support NDEF format.");
+                    writeMode = false;
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            writeMode = false;
+            displayMessage("Failed to write tag");
+        }
+        writeMode = false;
+        return false;
+    }
+
+    private void displayMessage(String message) {
+        TextView tv = (TextView) findViewById(R.id.urlscannedtextview);
+        tv.setText(message);
+    }
 
 }

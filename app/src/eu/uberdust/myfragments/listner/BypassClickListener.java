@@ -53,7 +53,9 @@ public class BypassClickListener implements View.OnClickListener {
     }
 
     public String changeBypass(String node, int i) {
-        node = node.substring(node.lastIndexOf(":")).replaceAll(":", "").replaceAll("/", "");
+        String[] parts = node.split(":");
+        node = parts[parts.length - 2] + parts[parts.length - 1];
+        node = node.replaceAll(":", "").replaceAll("/", "");
         try {
             String inurl = "http://150.140.16.31/api/v1/foi?identifier=" + node;
             URL getURL = new URL(inurl);
